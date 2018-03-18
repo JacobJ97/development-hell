@@ -1,0 +1,18 @@
+Options +FollowSymLinks
+
+RewriteEngine On
+
+# external redirect from actual URL to pretty one
+## Checks if there are two variables (for updating the data)
+RewriteCond %{THE_REQUEST} \?site-page=([^\s&]+)&data-to-update=([^\s&]+) [NC]
+RewriteRule ^ /%1/data=%2? [R=302,L,NE]
+
+## If not, falls back to check for one variable
+RewriteCond %{THE_REQUEST} \?site-page=([^\s&]+) [NC]
+RewriteRule ^ /%1? [R=302,L,NE]
+
+# internal forward from pretty URL to actual one
+RewriteRule ^([^/.]+)/?$ ?site-page=$1 [L,QSA,NC]
+RewriteRule ^([^/.]+)/data=([^/.]+)?$ ?site-page=$1&data-to-update=$2 [L,QSA,NC]
+
+
