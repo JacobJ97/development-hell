@@ -39,7 +39,7 @@
                 <label for="locationord5">Location</label>
                 <input class="form-control" type="text" name="location" id="locationord5" placeholder="Australia">
             </div>
-            <button class="btn btn-primary" id="submitord6" type="submit">Submit Survey <i class="fas fa-paper-plane"></i></button>
+            <button class="btn btn-primary" id="submitord6" value="add_survey" type="submit">Submit Survey <i class="fas fa-paper-plane"></i></button>
             <a style="display: none;" class="btn btn-success" id="successord7" href="?site-page=results">Results <i class="fas fa-arrow-right"></i></a>
         </form>
     </div>

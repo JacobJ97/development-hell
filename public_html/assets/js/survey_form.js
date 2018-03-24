@@ -5,7 +5,7 @@ $(document).ready(function () {
         $.ajax({
             type: 'POST',
             url: '/process.php',
-            data: form.serialize(),
+            data: form.serialize() + "&" + $.param({'form-action': document.activeElement.getAttribute('value')}),
             dataType: 'json',
             success: function (data) {
                 if (data.status === 'successful') {
