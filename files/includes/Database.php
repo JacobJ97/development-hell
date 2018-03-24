@@ -11,6 +11,31 @@ class Database {
         $this->mysqli->close();
     }
 
+    function table_exists($table_name, $table_details) {
+        $query = "";
+        $tables = $this->mysqli->query("SELECT * FROM information_schema.tables");
+
+        foreach ($tables as $table) {
+            if ($table === $table_name) {
+                return;
+            }
+        }
+
+        $counter = 0;
+        $detail_count = count($table_details);
+        foreach($table_details as $detail) {
+            if ($detail_count - $counter === 1) {
+                $query .= $detail . ")";
+            }
+            else {
+                $query .= $detail . ", ";
+            }
+            $counter++;
+        }
+
+        $this->mysqli->query("CREATE TABLE $table_name (id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, " . $query);
+    }
+
     function get_data() {
         $result = $this->mysqli->query("SELECT * FROM Demographics");
         $result_array = $result->fetch_all();
