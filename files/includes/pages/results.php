@@ -19,7 +19,7 @@
             <?php
             include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/Database.php");
             $db = new Database();
-            $results = $db->get_data();
+            $results = $db->get_data("Demographics");
             ?>
             <form method="get">
                 <input type="hidden" name="site-page" value="update">
