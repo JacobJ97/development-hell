@@ -36,22 +36,22 @@ switch ($_POST['form-action']) {
         }
         break;
     case 'password':
-        $username = $_POST['username'];
-        $password = $_POST['password'];
-        //$hash = password_hash($password, PASSWORD_DEFAULT);
-        $db->table_exists("Details", ["User", "Hash"]);
-        $response_array = $db->send_data("Details", [$username, $password]);
+        $username = $_POST['puname1'];
+        $password = $_POST['pword2'];
+
+        $array_of_titles = ["User", "Hash"];
+        $db->table_exists("Details", $array_of_titles);
+        $array_of_values = [$username, $password];
+
+        if (isset($_POST['ncheck3'])) {
+            $response_array = $db->verify_data("Details", $array_of_values);
+        }
+        else {
+            $hash = $db->hash_data($password);
+            $response_array = $db->send_data("Details", $array_of_titles, $array_of_values);
+        }
 
         //echo "password";
 }
 
 echo json_encode($response_array);
-
-
-
-
-
-
-
-
-
