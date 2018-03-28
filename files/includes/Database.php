@@ -78,42 +78,62 @@ class Database {
         $query = $this->query_builder($table_name, $array_of_titles, $array_of_values);
         $result = $this->mysqli->query($query);
         $this->disconnect();
-        return $this->response($result, "sent");
+        return $this->response("add", $result, "sent");
     }
 
     function hash_data($password) {
-
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        return $hash;
     }
 
-    function verify_data($table_name, $array_of_data) {
+    function verify_data($table_name, $array_of_values) {
         $result_array = $this->get_data($table_name);
-        for ($i = 0; $i < $result_array[1]; $i++) {
-
+        $ra_count = count($result_array);
+        for ($i = 0; $i < $ra_count; $i++) {
+            if ($result_array[0] === $array_of_values[0]) {
+                for ($j = 0; $i < $ra_count; $i++) {
+                    $stored_hash = $result_array[1];
+                    $password = $array_of_values[1];
+                    if (password_verify($password, $stored_hash)) {
+                        return $this->response("login", true, "correct");
+                    }
+                }
+                return $this->response("login", false, "incorrect");
+            }
         }
-
-
+        return $this->response("login", false, "incorrect");
     }
 
     function update_data($array_of_new_data, $id) {
         $result = $this->mysqli->query("UPDATE `Demographics` SET `name` ='$array_of_new_data[0]', `gender`='$array_of_new_data[1]', `age`='$array_of_new_data[2]', `pony`='$array_of_new_data[3]', `location`='$array_of_new_data[4]' WHERE `id_pone` = $id");
         $this->disconnect();
-        return $this->response($result, "updated");
+        return $this->response("update", $result, "updated");
     }
 
 
     function remove_data($id) {
         $result = $this->mysqli->query("DELETE FROM `Demographics` WHERE  `id_pone` = $id");
-        return $this->response($result, "deleted");
+        return $this->response("remove", $result, "deleted");
     }
 
-    function response($result, $message) {
+    function response($action, $result, $message) {
         if ($result) {
             $response_array['status'] = 'successful';
-            $response_array['reason'] = 'The row has successfully been ' .  $message . '.';
+            if ($action === "login") {
+                $response_array['reason'] = 'Your details were ' . $message . '.';
+            }
+            else {
+                $response_array['reason'] = 'The row has successfully been ' .  $message . '.';
+            }
+
         }
         else {
             $response_array['status'] = 'failure';
-            $response_array['reason'] = 'The row has unsuccessfully been ' .  $message . '.';
+            if ($action === "login") {
+                $response_array['reason'] = 'Your details were ' . $message . '.';
+            } else {
+                $response_array['reason'] = 'The row has unsuccessfully been ' . $message . '.';
+            }
         }
 
         return $response_array;
