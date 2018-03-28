@@ -29,12 +29,18 @@ switch ($_POST['form-action']) {
             if (!$location) {
                 $location = "NULL";
             }
-            $response_array = $db->send_data([$name, $gender, $age, $fav_pony, $location]);
+            $array_of_titles = ["name", "gender", "age", "pony", "location"];
+            $db->table_exists("Demographics", $array_of_titles);
+            $array_of_values = [$name, $gender, $age, $fav_pony, $location];
+            $response_array = $db->send_data("Demographics", $array_of_titles, $array_of_values);
         }
         break;
     case 'password':
         $username = $_POST['username'];
         $password = $_POST['password'];
+        //$hash = password_hash($password, PASSWORD_DEFAULT);
+        $db->table_exists("Details", ["User", "Hash"]);
+        $response_array = $db->send_data("Details", [$username, $password]);
 
         //echo "password";
 }
