@@ -1,8 +1,13 @@
 <?php
-
-//if(count(get_included_files()) ==1) exit("Direct access not permitted.");
+session_start();
 
 header('Content-type: application/json');
+
+/* Pointless security over obscurity check, lol */
+if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest')
+{
+    die("Direct access not permitted.");
+}
 
 $name = $_POST['pname'];
 $gender = $_POST['gender'];
@@ -16,10 +21,12 @@ $db = new Database();
 
 switch ($_POST['form-action']) {
     case 'update_row':
-        $response_array = $db->update_data([$name, $gender, $age, $fav_pony, $location], $id);
+        $array_of_titles = ["name", "gender", "age", "pony", "location"];
+        $updated_new_data = [$name, $gender, $age, $fav_pony, $location];
+        $response_array = $db->update_data("Demographics", $array_of_titles, $updated_new_data, $id);
         break;
     case 'delete_row':
-        $response_array = $db->remove_data($id);
+        $response_array = $db->remove_data("Demographics", $id);
         break;
     case 'add_survey':
         if (empty($name) || empty($gender) || empty($age) || empty($fav_pony)) {
@@ -41,17 +48,23 @@ switch ($_POST['form-action']) {
 
         $array_of_titles = ["User", "Hash"];
         $db->table_exists("Details", $array_of_titles);
-        $array_of_values = [$username, $password];
+        $array_of_values = [$username];
 
         if (isset($_POST['ncheck3'])) {
-            $response_array = $db->verify_data("Details", $array_of_values);
+            $hash = $db->hash_data($password);
+            $array_of_values[] = $hash;
+            $response_array = $db->send_data("Details", $array_of_titles, $array_of_values);
+
         }
         else {
-            $hash = $db->hash_data($password);
-            $response_array = $db->send_data("Details", $array_of_titles, $array_of_values);
+            $array_of_values[] = $password;
+            $response_array = $db->verify_data("Details", $array_of_values);
         }
 
-        //echo "password";
+        if ($response_array['status'] === 'successful') {
+            $_SESSION['loggedIn'] = true;
+            $_SESSION['userName'] = $username;
+        }
 }
 
 echo json_encode($response_array);
