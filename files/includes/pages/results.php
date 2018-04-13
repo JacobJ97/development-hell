@@ -31,7 +31,7 @@
                     <td><?=$results[0][$i][3]?></td>
                     <td><?=$results[0][$i][4]?></td>
                     <td><?=$results[0][$i][5]?></td>
-                    <td><button value="<?=htmlspecialchars(json_encode($results[0][$i]))?>" name="data-to-update" type="submit" class="btn btn-primary">Update</button></td>
+                    <td><?php if (isset($_SESSION['loggedIn'])) {echo '<button value="' . htmlspecialchars(json_encode($results[0][$i])) . '" name="data-to-update" type="submit" class="btn btn-primary">Update</button>';}?></td>
                 </tr>
             <?php endfor; ?>
             </form>

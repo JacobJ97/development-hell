@@ -14,6 +14,11 @@
             <li class="nav-item">
                 <a class="nav-link" href="/results">Results <span class="sr-only"></span></a>
             </li>
+            <?php if (isset($_SESSION['loggedIn'])) {$nav = "Logout";} else {$nav = "Login";} ?>
+            <li class="nav-item">
+                <a class="nav-link" href="/<?php echo strtolower($nav) . '">' . $nav ?> <span class="sr-only"></span></a>
+            </li>
+            <?php if (isset($_SESSION['userName'])) {echo '<span class="user-navbar">' . $_SESSION["userName"] . '</span>';} ?>
         </ul>
         <form class="form-inline my-2 my-lg-0">
             <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
