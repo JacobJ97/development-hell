@@ -13,9 +13,10 @@ class Database {
 
     function table_exists($table_name, $table_details) {
         $query = "";
-        $tables = $this->mysqli->query("SELECT * FROM information_schema.tables");
+        $tables = $this->mysqli->query("SHOW tables");
+        $tables_assoc = mysqli_fetch_assoc($tables);
 
-        foreach ($tables as $table) {
+        foreach ($tables_assoc as $table) {
             if ($table === $table_name) {
                 return;
             }
@@ -25,10 +26,10 @@ class Database {
         $detail_count = count($table_details);
         foreach($table_details as $detail) {
             if ($detail_count - $counter === 1) {
-                $query .= $detail . ")";
+                $query .= $detail . " VARCHAR(100))";
             }
             else {
-                $query .= $detail . ", ";
+                $query .= $detail . " VARCHAR(100), ";
             }
             $counter++;
         }
@@ -36,7 +37,7 @@ class Database {
         $this->mysqli->query("CREATE TABLE $table_name (id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, " . $query);
     }
 
-    function query_builder($table_name, $array_of_titles, $array_of_values) {
+    function query_builder_add($table_name, $array_of_titles, $array_of_values) {
         $query = "INSERT INTO $table_name (";
         $aot_count = count($array_of_titles);
         $aov_count = count($array_of_values);
@@ -65,6 +66,32 @@ class Database {
         return $query;
     }
 
+    function get_id_column_name($table_name) {
+        $result = $this->mysqli->query("SHOW COLUMNS FROM $table_name");
+        $row = $result->fetch_assoc();
+        $id_name = $row['Field'];
+        return $id_name;
+    }
+
+    function query_builder_update($table_name, $array_of_titles, $array_of_new_data, $id) {
+        $query = "UPDATE $table_name SET ";
+        $aond_count = count($array_of_new_data);
+        for ($i = 0; $i < $aond_count; $i++) {
+            $title = $array_of_titles[$i];
+            $new_data = $array_of_new_data[$i];
+            if ($aond_count - $i === 1) {
+                $query .= "$title = '$new_data' ";
+            } else {
+                $query .= "$title = '$new_data', ";
+            }
+        }
+
+        $id_name = $this->get_id_column_name($table_name);
+
+        $query .= "WHERE $id_name = $id";
+        return $query;
+    }
+
     function get_data($table_name) {
         $result = $this->mysqli->query("SELECT * FROM " . $table_name);
         $result_array = $result->fetch_all();
@@ -75,7 +102,7 @@ class Database {
     }
 
     function send_data($table_name, $array_of_titles, $array_of_values) {
-        $query = $this->query_builder($table_name, $array_of_titles, $array_of_values);
+        $query = $this->query_builder_add($table_name, $array_of_titles, $array_of_values);
         $result = $this->mysqli->query($query);
         $this->disconnect();
         return $this->response("add", $result, "sent");
@@ -88,31 +115,33 @@ class Database {
 
     function verify_data($table_name, $array_of_values) {
         $result_array = $this->get_data($table_name);
-        $ra_count = count($result_array);
-        for ($i = 0; $i < $ra_count; $i++) {
-            if ($result_array[0] === $array_of_values[0]) {
-                for ($j = 0; $i < $ra_count; $i++) {
-                    $stored_hash = $result_array[1];
+        $assoc_result_array = $result_array[0];
+        $ra_count = $result_array[1];
+        foreach ($assoc_result_array as $row) {
+            if ($row[1] === $array_of_values[0]) {
+                for ($j = 0; $j < $ra_count; $j++) {
+                    $stored_hash = $row[2];
                     $password = $array_of_values[1];
                     if (password_verify($password, $stored_hash)) {
                         return $this->response("login", true, "correct");
                     }
                 }
-                return $this->response("login", false, "incorrect");
+                return $this->response("login", false, "incorrect $row[2]");
             }
         }
         return $this->response("login", false, "incorrect");
     }
 
-    function update_data($array_of_new_data, $id) {
-        $result = $this->mysqli->query("UPDATE `Demographics` SET `name` ='$array_of_new_data[0]', `gender`='$array_of_new_data[1]', `age`='$array_of_new_data[2]', `pony`='$array_of_new_data[3]', `location`='$array_of_new_data[4]' WHERE `id_pone` = $id");
+    function update_data($table_name, $array_of_titles, $array_of_new_data, $id) {
+        $query = $this->query_builder_update($table_name, $array_of_titles, $array_of_new_data, $id);
+        $result = $this->mysqli->query($query);
         $this->disconnect();
         return $this->response("update", $result, "updated");
     }
 
-
-    function remove_data($id) {
-        $result = $this->mysqli->query("DELETE FROM `Demographics` WHERE  `id_pone` = $id");
+    function remove_data($table_name, $id) {
+        $id_name = $this->get_id_column_name($table_name);
+        $result = $this->mysqli->query("DELETE FROM $table_name WHERE $id_name = $id");
         return $this->response("remove", $result, "deleted");
     }
 
