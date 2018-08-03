@@ -4,7 +4,3 @@ session_destroy();
 header("Location: /");
 die();
 ?>
-
-
-
-
