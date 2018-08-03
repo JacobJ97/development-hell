@@ -34,36 +34,40 @@ class Database {
             $counter++;
         }
 
-        $this->mysqli->query("CREATE TABLE $table_name (id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, " . $query);
+        $this->mysqli->query("CREATE TABLE $table_name (id_" . strtolower($table_name) . " int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, " . $query);
     }
 
     function query_builder_add($table_name, $array_of_titles, $array_of_values) {
-        $query = "INSERT INTO $table_name (";
-        $aot_count = count($array_of_titles);
-        $aov_count = count($array_of_values);
-        for ($i = 0; $i < $aot_count; $i++) {
-            $title = $array_of_titles[$i];
-            if ($aot_count - $i !== 1) {
-                $query .= "$title, ";
+        $table_count = count($table_name);
+        $query_multi = array();
+        for ($x = 0; $x < $table_count; $x++) {
+            $query = "INSERT INTO $table_name[$x] (";
+            $aot_count = count($array_of_titles[$x]);
+            $aov_count = count($array_of_values[$x]);
+            for ($i = 0; $i < $aot_count; $i++) {
+                $title = $array_of_titles[$x][$i];
+                if ($aot_count - $i !== 1) {
+                    $query .= "$title, ";
+                } else {
+                    $query .= "$title) ";
+                }
             }
-            else {
-                $query .= "$title)";
+
+            $query .= "VALUES (";
+
+            for ($j = 0; $j < $aov_count; $j++) {
+                $value = $array_of_values[$x][$j];
+                if ($aov_count - $j !== 1) {
+                    $query .= "'$value', ";
+                } else {
+                    $query .= "'$value')";
+                }
             }
+
+            $query_multi[] = $query;
         }
 
-        $query .= "VALUES (";
-
-        for ($j = 0; $j < $aov_count; $j++) {
-            $value = $array_of_values[$j];
-            if ($aov_count - $j !== 1) {
-                $query .= "'$value', ";
-            }
-            else {
-                $query .= "'$value')";
-            }
-        }
-
-        return $query;
+        return $query_multi;
     }
 
     function get_id_column_name($table_name) {
@@ -74,38 +78,58 @@ class Database {
     }
 
     function query_builder_update($table_name, $array_of_titles, $array_of_new_data, $id) {
-        $query = "UPDATE $table_name SET ";
-        $aond_count = count($array_of_new_data);
-        for ($i = 0; $i < $aond_count; $i++) {
-            $title = $array_of_titles[$i];
-            $new_data = $array_of_new_data[$i];
-            if ($aond_count - $i === 1) {
-                $query .= "$title = '$new_data' ";
-            } else {
-                $query .= "$title = '$new_data', ";
+        $table_count = count($table_name);
+        $query_multi = array();
+        for ($x = 0; $x < $table_count; $x++) {
+            $query = "UPDATE " . $table_name[$x] . "SET (";
+            $aond_count = count($array_of_new_data[$x]);
+            for ($i = 0; $i < $aond_count; $i++) {
+                $title = $array_of_titles[$x][$i];
+                $new_data = $array_of_new_data[$x][$i];
+                if ($aond_count - $i === 1) {
+                    $query .= "$title = '$new_data' ";
+                } else {
+                    $query .= "$title = '$new_data', ";
+                }
             }
+
+            $id_name = $this->get_id_column_name($table_name[$x]);
+
+            $query .= "WHERE $id_name = $id[$x]";
+            $query_multi[] .= $query . "; ";
         }
 
-        $id_name = $this->get_id_column_name($table_name);
-
-        $query .= "WHERE $id_name = $id";
-        return $query;
+        return $query_multi;
     }
 
     function get_data($table_name) {
         $result = $this->mysqli->query("SELECT * FROM " . $table_name);
         $result_array = $result->fetch_all();
         $array_count = count($result_array);
-        $this->disconnect();
 
         return [$result_array, $array_count];
     }
 
-    function send_data($table_name, $array_of_titles, $array_of_values) {
-        $query = $this->query_builder_add($table_name, $array_of_titles, $array_of_values);
-        $result = $this->mysqli->query($query);
-        $this->disconnect();
-        return $this->response("add", $result, "sent");
+    function send_data($table_name, $arrays_of_titles, $arrays_of_values, $form_action) {
+        $queries = $this->query_builder_add($table_name, $arrays_of_titles, $arrays_of_values);
+        foreach ($queries as $query) {
+            $result = $this->mysqli->query($query);
+            if (!$result) {
+                if ($form_action === "password") {
+                    return $this->response("registration", FALSE, "created");
+                }
+                else {
+                    return $this->response("add", FALSE, "sent");
+                }
+            }
+        }
+
+        if ($form_action === "password") {
+            return $this->response("registration", TRUE, "created");
+        }
+        else {
+            return $this->response("add", TRUE, "sent");
+        }
     }
 
     function hash_data($password) {
@@ -135,7 +159,6 @@ class Database {
     function update_data($table_name, $array_of_titles, $array_of_new_data, $id) {
         $query = $this->query_builder_update($table_name, $array_of_titles, $array_of_new_data, $id);
         $result = $this->mysqli->query($query);
-        $this->disconnect();
         return $this->response("update", $result, "updated");
     }
 
@@ -151,8 +174,11 @@ class Database {
             if ($action === "login") {
                 $response_array['reason'] = 'Your details were ' . $message . '.';
             }
-            else {
+            else if ($action === "add") {
                 $response_array['reason'] = 'The row has successfully been ' .  $message . '.';
+            }
+            else if ($action === "registration") {
+                $response_array['reason'] = 'Your account has successfully been ' .  $message . '.';
             }
 
         }
@@ -160,8 +186,12 @@ class Database {
             $response_array['status'] = 'failure';
             if ($action === "login") {
                 $response_array['reason'] = 'Your details were ' . $message . '.';
-            } else {
+            }
+            else if ($action === "add") {
                 $response_array['reason'] = 'The row has unsuccessfully been ' . $message . '.';
+            }
+            else if ($action === "registration") {
+                $response_array['reason'] = 'Your account has unsuccessfully been ' .  $message . '.';
             }
         }
 
