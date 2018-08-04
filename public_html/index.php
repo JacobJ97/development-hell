@@ -1,4 +1,12 @@
-<?php session_start(); ?>
+<?php session_start();
+include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/Database.php");
+$db = new Database();
+$array_of_titles = ["User", "Hash"];
+$db->table_exists("Details", $array_of_titles);
+$array_of_titles2 = ["User", "Role", "Fname", "Lname", "userEmail", "Description"];
+$db->table_exists("Users", $array_of_titles2);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
