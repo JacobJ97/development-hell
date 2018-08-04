@@ -1,20 +1,28 @@
 <?php
 
-//include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/Database.php");
-//$db = new Database();
+include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/User.php");
+$user = new User();
 $server_request = $_GET['site-page'];
 
 if (empty($server_request)) {
     include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/pages/home.php");
 }
 else {
-    $all_webpages = scandir($_SERVER['DOCUMENT_ROOT'] . "../files/includes/pages/", 1);
+    $role = $user->check_user_role($user->get_user());
+    if ($role == "admin") {
+        $all_webpages = array_merge(scandir($_SERVER['DOCUMENT_ROOT'] . "../files/includes/admin/", 1), scandir($_SERVER['DOCUMENT_ROOT'] . "../files/includes/pages/", 1));
+    } else {
+        $all_webpages = scandir($_SERVER['DOCUMENT_ROOT'] . "../files/includes/pages/", 1);
+    }
 
     foreach ($all_webpages as &$page) {
         $page = str_replace(".php", "", $page);
     }
 
+    $is_admin = substr($server_request, 0, 5) === "admin";
+
     $all_webpages = array_diff($all_webpages, [".", "..", "home"]);
+    $all_webpages = array_values($all_webpages);
     $num_of_webpages = count($all_webpages);
 
     for ($i = 0; $i < $num_of_webpages; $i++) {
@@ -29,10 +37,18 @@ else {
                 elseif ($all_webpages[$i] == "update") {
                     $_SESSION['js_loaded'] = "update";
                 }
-                include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/pages/" . $all_webpages[$i] . ".php");
-                break;
 
+                if ($is_admin) {
+                    include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/admin/" . $all_webpages[$i] . ".php");
+                    break;
+                }
+                else {
+                    include_once($_SERVER['DOCUMENT_ROOT'] . "../files/includes/pages/" . $all_webpages[$i] . ".php");
+                    break;
+                }
+            break;
         }
     }
+    //die("file not valid");
 }
 

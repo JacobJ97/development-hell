@@ -47,15 +47,13 @@ switch ($_POST['form-action']) {
         $password = $_POST['pword2'];
 
         $array_of_titles = ["User", "Hash"];
-        $db->table_exists("Details", $array_of_titles);
-        $array_of_titles2 = ["User", "Fname", "Lname", "userEmail", "Description"];
-        $db->table_exists("Users", $array_of_titles2);
+        $array_of_titles2 = ["User", "Role", "Fname", "Lname", "userEmail", "Description"];
         $array_of_values = [$username];
 
         if (isset($_POST['ncheck3'])) {
             $hash = $db->hash_data($password);
             $array_of_values[] = $hash;
-            $array_of_values2 = [$username, "", "", "", ""];
+            $array_of_values2 = [$username, "admin", "", "", "", ""];
             $response_array = $db->send_data(["Details", "Users"], [$array_of_titles, $array_of_titles2], [$array_of_values, $array_of_values2], $_POST['form-action']);
         }
         else {
