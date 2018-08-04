@@ -1,6 +1,4 @@
 <?php
-$_SESSION = Array();
-session_destroy();
+session_unset();
 header("Location: /");
-die();
-?>
+
